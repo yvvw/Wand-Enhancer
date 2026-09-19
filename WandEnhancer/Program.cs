@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -33,9 +33,11 @@ namespace WandEnhancer
 
             bool startupFailed = StartupLog.Exists(entry => entry.Value == ELogType.Error);
 
+            string initialPath = ParsePathArgument(args);
+
             var application = new App();
             application.InitializeComponent();
-            var window = new MainWindow();
+            var window = new MainWindow(initialPath);
 
             // Launch mode is headless, so replay errors into the UI if startup failed.
             if (startupFailed)
@@ -43,6 +45,58 @@ namespace WandEnhancer
 
             application.MainWindow = window;
             application.Run();
+        }
+
+        public static string ParsePathArgument(string[] args)
+        {
+            if (args == null || args.Length == 0)
+                return null;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                if (string.IsNullOrWhiteSpace(arg))
+                    continue;
+
+                if (arg.StartsWith("--path=", StringComparison.OrdinalIgnoreCase) ||
+                    arg.StartsWith("-path=", StringComparison.OrdinalIgnoreCase) ||
+                    arg.StartsWith("-p=", StringComparison.OrdinalIgnoreCase))
+                {
+                    int eqIndex = arg.IndexOf('=');
+                    return CleanPath(arg.Substring(eqIndex + 1));
+                }
+
+                if (arg.Equals("--path", StringComparison.OrdinalIgnoreCase) ||
+                    arg.Equals("-path", StringComparison.OrdinalIgnoreCase) ||
+                    arg.Equals("-p", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        return CleanPath(args[i + 1]);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static string CleanPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return null;
+
+            string cleaned = path.Trim().Trim('"', '\'');
+            if (string.IsNullOrWhiteSpace(cleaned))
+                return null;
+
+            try
+            {
+                return Path.GetFullPath(cleaned);
+            }
+            catch
+            {
+                return cleaned;
+            }
         }
 
         private static bool TryLaunchMode(string[] args)

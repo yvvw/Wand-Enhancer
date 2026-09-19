@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -13,10 +13,10 @@ namespace WandEnhancer.View.MainWindow
         public static MainWindow Instance;
         public readonly MainWindowVm ViewModel;
 
-        public MainWindow()
+        public MainWindow(string initialPath = null)
         {
             InitializeComponent();
-            this.ViewModel = new MainWindowVm(this, new WindowsFileDialogs());
+            this.ViewModel = new MainWindowVm(this, new WindowsFileDialogs(), initialPath);
             this.DataContext = ViewModel;
             VersionLabel.Text = Constants.Version.ToString();
             Instance = this;

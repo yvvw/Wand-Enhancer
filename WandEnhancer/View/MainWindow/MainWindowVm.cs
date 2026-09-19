@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
@@ -104,7 +104,7 @@ namespace WandEnhancer.View.MainWindow
                 return;
             }
 
-            var info = WeModInstalls.CheckWeModPath(selectedPath);
+            var info = WeModInstalls.CheckWeModPath(selectedPath) ?? WeModInstalls.FindLatestWeMod(selectedPath);
             if (info == null)
             {
                 Log(LocalizationManager.Format("log_invalid_directory", Path.GetFileName(selectedPath)), ELogType.Error);
@@ -251,7 +251,7 @@ namespace WandEnhancer.View.MainWindow
             Log(LocalizationManager.Format("log_open_link_failed", url), ELogType.Warn);
         }
 
-        public MainWindowVm(IShellView shell, IFileDialogs dialogs)
+        public MainWindowVm(IShellView shell, IFileDialogs dialogs, string initialPath = null)
         {
             _shell = shell;
             _dialogs = dialogs;
@@ -262,10 +262,32 @@ namespace WandEnhancer.View.MainWindow
             CopyLogsCommand = new RelayCommand(OnCopyLogs, HasLogs);
             ExportLogsCommand = new RelayCommand(OnExportLogs, HasLogs);
 
-            UseInstall(WeModInstalls.FindWeMod());
-            if (WeModInfo == null)
+            if (!string.IsNullOrWhiteSpace(initialPath))
             {
-                Log(LocalizationManager.Get("log_install_not_found"), ELogType.Error);
+                var customConfig = WeModInstalls.CheckWeModPath(initialPath) ?? WeModInstalls.FindLatestWeMod(initialPath);
+                if (customConfig == null)
+                {
+                    customConfig = new WeModConfig
+                    {
+                        BrandName = "Wand",
+                        ExecutableName = "Wand.exe",
+                        RootDirectory = initialPath
+                    };
+                    UseInstall(customConfig);
+                    Log(LocalizationManager.Format("log_invalid_directory", Path.GetFileName(initialPath)), ELogType.Warn);
+                }
+                else
+                {
+                    UseInstall(customConfig);
+                }
+            }
+            else
+            {
+                UseInstall(WeModInstalls.FindWeMod());
+                if (WeModInfo == null)
+                {
+                    Log(LocalizationManager.Get("log_install_not_found"), ELogType.Error);
+                }
             }
 
             foreach (var entry in Program.StartupLog)
